@@ -5,10 +5,20 @@ import (
     "fmt"
     "log"
     "net/http"
+    "path"
     "time"
 
     "github.com/golang/gddo/httputil"
     "github.com/gorilla/mux"
+)
+
+const (
+	ConfigDefaultListen = ":5000"
+)
+
+const (
+	ContentTypeData = "application/octet-stream"
+	ContentTypeMetadata = "application/vnd.irobot.metadata+json"
 )
 
 type HttpError struct {
@@ -58,6 +68,14 @@ type ManifestEntryAvailability struct {
 	Checksums string `json:"checksums"`
 }
 
+type Metadata struct {
+	Checksum string `json:"checksum"`
+	Size int `json:"size"`
+	Created time.Time `json:"created"`
+	Modified time.Time `json:"modified"`
+	AVUs []map[string]string `json:"avus"`
+}
+
 func HandleError(w http.ResponseWriter, req *http.Request, code int, reason string, desc string) {
         status := http.StatusText(code)
 	w.Header().Set("Content-Type", "application/json")
@@ -91,18 +109,40 @@ func GetHeadManifestEndpoint(w http.ResponseWriter, req *http.Request) {
 }
 
 func GetHeadDataObject(w http.ResponseWriter, req *http.Request) {
-	acceptable := []string{"application/octet-stream", "application/vnd.irobot.metadata+json"}
+	acceptable := []string{ContentTypeData, ContentTypeMetadata}
 	contentType := httputil.NegotiateContentType(req, acceptable, "")
-	if contentType == "" {
+	switch contentType {
+	case ContentTypeData:
+		GetHeadDataObjectData(w, req)
+	case ContentTypeMetadata:
+		GetHeadDataObjectMetadata(w, req)
+	default:
 		HandleError(w, req, http.StatusNotAcceptable, fmt.Sprintf("Please accept one of the supported content types: %v", acceptable), "You specified an Accept header that does not include any of the supported content types.")
-	}
-	w.Header().Set("Content-Type", contentType)
-	w.WriteHeader(http.StatusOK)
-	if req.Method == http.MethodGet {
-		json.NewEncoder(w).Encode(contentType)
 	}
 }
 
+func GetHeadDataObjectData(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", ContentTypeData)
+	if req.Method == http.MethodGet {
+		switch path.Ext(req.URL.Path) {
+		case ".cram":
+			http.ServeFile(w, req, "test.cram")
+		case ".crai":
+			http.ServeFile(w, req, "test.cram.crai")
+		default:
+			HandleError(w, req, http.StatusNotFound, fmt.Sprintf("File not found: %v", req.URL.Path), "The requested file was not found. This server is currently only able to return test data, and only for files ending in .cram or .crai")
+		}
+	}
+}
+
+func GetHeadDataObjectMetadata(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", ContentTypeMetadata)
+	w.WriteHeader(http.StatusOK)
+	metadata := Metadata{}
+	if req.Method == http.MethodGet {
+		json.NewEncoder(w).Encode(metadata)
+	}
+}
 
 func PostDataObject(w http.ResponseWriter, req *http.Request) {
 	HandleError(w, req, http.StatusInsufficientStorage, "Precache not implemented", "Precache/cache management functionality not implemented in this server. Please proceed with request without explicit caching.")
@@ -122,5 +162,5 @@ func main() {
 	router.PathPrefix("/").HandlerFunc(GetHeadDataObject).Methods("GET", "HEAD")
 	router.PathPrefix("/").HandlerFunc(PostDataObject).Methods("POST")
 	router.PathPrefix("/").HandlerFunc(DeleteDataObject).Methods("DELETE")
-	log.Fatal(http.ListenAndServe(":5000", router))
+	log.Fatal(http.ListenAndServe(ConfigDefaultListen, router))
 }
