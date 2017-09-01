@@ -128,8 +128,10 @@ func GetHeadDataObjectData(w http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodGet {
 		switch path.Ext(req.URL.Path) {
 		case ".cram":
+			w.Header().Set("ETag", "15af103abfc18fbe9d45d78e98b36b64")
 			http.ServeFile(w, req, "test.cram")
 		case ".crai":
+			w.Header().Set("ETag", "c00265295b381d1d6c1359d748558fc9")
 			http.ServeFile(w, req, "test.cram.crai")
 		default:
 			HandleError(w, req, http.StatusNotFound, fmt.Sprintf("File not found: %v", req.URL.Path), "The requested file was not found. This server is currently only able to return test data, and only for files ending in .cram or .crai")
