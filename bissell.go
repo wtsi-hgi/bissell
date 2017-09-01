@@ -112,7 +112,7 @@ func GetHeadManifestEndpoint(w http.ResponseWriter, req *http.Request) {
 
 func GetHeadDataObject(w http.ResponseWriter, req *http.Request) {
 	acceptable := []string{ContentTypeData, ContentTypeMetadata}
-	contentType := httputil.NegotiateContentType(req, acceptable, "")
+	contentType := httputil.NegotiateContentType(req, acceptable, ContentTypeData)
 	switch contentType {
 	case ContentTypeData:
 		GetHeadDataObjectData(w, req)
