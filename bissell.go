@@ -188,8 +188,7 @@ func iRobotAuthHandler(nextHandler http.Handler, basicRealm string, arvadosRealm
 			}
 		}
 		w.Header().Set("WWW-Authenticate", fmt.Sprintf(`Basic realm="%s", Arvados realm="%s"`, basicRealm, arvadosRealm))
-		w.WriteHeader(401)
-		w.Write([]byte("Unauthorised.\n"))
+		HandleError(w, req, http.StatusUnauthorized, "Unauthorized", "Please provide valid credentials.")
 		return
 	})
 }
