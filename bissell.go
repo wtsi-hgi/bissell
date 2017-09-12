@@ -177,7 +177,7 @@ func arvadosAuth(r *http.Request) (apiToken string, ok bool) {
 	if auth == "" {
 		return
 	}
-	const prefix = "Arvados "
+	const prefix = "Bearer "
 	if !strings.HasPrefix(auth, prefix) {
 		return
 	}
@@ -205,7 +205,7 @@ func iRobotAuthHandler(nextHandler http.Handler, basicRealm string, arvadosRealm
 				return
 			}
 		}
-		w.Header().Set("WWW-Authenticate", fmt.Sprintf(`Basic realm="%s", Arvados realm="%s"`, basicRealm, arvadosRealm))
+		w.Header().Set("WWW-Authenticate", fmt.Sprintf(`Basic realm="%s", Bearer realm="%s"`, basicRealm, arvadosRealm))
 		HandleError(w, req, http.StatusUnauthorized, "Unauthorized", "Please provide valid credentials.")
 		return
 	})
