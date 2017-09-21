@@ -219,5 +219,6 @@ func main() {
 	router.PathPrefix("/").HandlerFunc(GetHeadDataObject).Methods("GET", "HEAD")
 	router.PathPrefix("/").HandlerFunc(PostDataObject).Methods("POST")
 	router.PathPrefix("/").HandlerFunc(DeleteDataObject).Methods("DELETE")
+	log.Println("Bissell starting on port %v", ConfigDefaultListen)
 	log.Fatal(http.ListenAndServe(ConfigDefaultListen, iRobotAuthHandler(router, "basic username/password", "arvados api token")))
 }
